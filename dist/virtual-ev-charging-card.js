@@ -239,7 +239,7 @@ class VirtualEVChargingCard extends HTMLElement {
     this.querySelector('#ev-sw-solar').checked = solarModeState && solarModeState.state === 'on';
     this.querySelector('#ev-sw-grid').checked = gridModeState && gridModeState.state === 'on';
 
-    // Animación y estados visuales del icono principal
+    // Animación y textos corregidos del subtítulo
     const iconWrapper = this.querySelector('#ev-main-icon-wrapper');
     const subtitle = this.querySelector('#ev-status-subtitle');
     iconWrapper.className = 'ev-icon-wrapper';
@@ -251,13 +251,13 @@ class VirtualEVChargingCard extends HTMLElement {
         subtitle.style.color = '#2196F3';
       } else {
         iconWrapper.classList.add('charging-solar');
-        subtitle.textContent = `Inyectando Excedentes Solares`;
+        subtitle.textContent = `Aprovechando Producción Solar`;
         subtitle.style.color = '#4CAF50';
       }
     } else {
       if (solarModeState && solarModeState.state === 'on') {
         iconWrapper.classList.add('ready');
-        subtitle.textContent = `Esperando Excedentes (> ${solarThresholdState ? solarThresholdState.state : '3000'}W)`;
+        subtitle.textContent = `Esperando Producción Solar (> ${solarThresholdState ? solarThresholdState.state : '3000'}W)`;
         subtitle.style.color = 'var(--secondary-text-color)';
       } else {
         subtitle.textContent = 'Estación en espera (Desarmada)';
