@@ -3,6 +3,7 @@ class VirtualEVChargingCard extends HTMLElement {
     this.config = config;
   }
 
+  // Lanza el panel emergente nativo "More Info" de Home Assistant
   _openMoreInfo(entityId) {
     const event = new CustomEvent('hass-more-info', {
       detail: { entityId: entityId },
@@ -15,6 +16,7 @@ class VirtualEVChargingCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     
+    // Nombres exactos de las entidades generadas por la integración
     const pctState = hass.states['number.virtual_ev_charging_station_porcentaje_actual'];
     const powerState = hass.states['number.virtual_ev_charging_station_potencia_de_carga'];
     const solarThresholdState = hass.states['number.virtual_ev_charging_station_umbral_potencia_solar'];
@@ -26,6 +28,7 @@ class VirtualEVChargingCard extends HTMLElement {
     const currentLoadState = hass.states['sensor.moto_power'];
     const physicalPlugState = hass.states['switch.moto'];
 
+    // Evita renderizar si las entidades principales aún no existen en HA
     if (!pctState || !physicalPlugState) return;
 
     if (!this.content) {
@@ -119,7 +122,6 @@ class VirtualEVChargingCard extends HTMLElement {
         .ev-title { font-size: 18px; font-weight: bold; color: var(--primary-text-color); }
         .ev-subtitle { font-size: 13px; color: var(--secondary-text-color); }
         
-        /* Estilos del nuevo panel de control deslizante */
         .ev-setup-panel { 
           background: var(--secondary-background-color); padding: 14px; 
           border-radius: 8px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 14px;
@@ -167,7 +169,7 @@ class VirtualEVChargingCard extends HTMLElement {
       this.appendChild(style);
       this.content = this.querySelector('.ev-card-container');
 
-      // ESCUCHADORES DE EVENTOS PARA LOS DESLIZADORES INTERNOS
+      // --- LISTENERS DE LOS DESLIZADORES INTERNOS ---
       const rangePct = this.querySelector('#ev-range-pct');
       rangePct.addEventListener('input', (e) => {
         this.querySelector('#ev-txt-pct').textContent = e.target.value + '%';
@@ -190,7 +192,7 @@ class VirtualEVChargingCard extends HTMLElement {
         });
       });
 
-      // Gráficas históricas en la cuenta atrás y umbral solar
+      // --- LISTENERS DE LAS ZONAS CLICABLES ---
       this.querySelector('#ev-click-kwh').addEventListener('click', () => {
         this._openMoreInfo('sensor.virtual_ev_charging_station_energia_restante_80');
       });
@@ -201,7 +203,7 @@ class VirtualEVChargingCard extends HTMLElement {
         this._openMoreInfo('number.virtual_ev_charging_station_umbral_potencia_solar');
       });
 
-      // Interruptores
+      // --- LISTENERS DE LOS INTERRUPTORES ---
       this.querySelector('#ev-sw-solar').addEventListener('change', (e) => {
         hass.callService('switch', e.target.checked ? 'turn_on' : 'turn_off', {
           entity_id: 'switch.virtual_ev_charging_station_modo_automatico_solar'
@@ -214,30 +216,32 @@ class VirtualEVChargingCard extends HTMLElement {
       });
     }
 
-    // SINCRONIZACIÓN EN TIEMPO REAL DESDE HOME ASSISTANT A LA TARJETA
-    // Sincroniza el deslizador de porcentaje si no está en foco por el usuario
+    // --- ACTUALIZACIÓN DE DATOS EN TIEMPO REAL ---
+
+    // Sincroniza los deslizadores solo si el usuario no los está tocando en ese momento
     if (document.activeElement !== this.querySelector('#ev-range-pct') && pctState) {
       this.querySelector('#ev-range-pct').value = pctState.state;
       this.querySelector('#ev-txt-pct').textContent = pctState.state + '%';
     }
     
-    // Sincroniza el deslizador de potencia de carga si no está en foco
     if (document.activeElement !== this.querySelector('#ev-range-power') && powerState) {
       this.querySelector('#ev-range-power').value = powerState.state;
       this.querySelector('#ev-txt-power').textContent = powerState.state + ' kW';
     }
 
+    // Actualiza textos dinámicos
     this.querySelector('#ev-val-kwh').textContent = kwhRemainingState ? `${kwhRemainingState.state} kWh` : '0.0 kWh';
     this.querySelector('#ev-val-time').textContent = timeRemainingState ? timeRemainingState.state : '0m';
     this.querySelector('#ev-tel-solar').textContent = currentSolarState ? `${currentSolarState.state} W` : '0 W';
     this.querySelector('#ev-tel-load').textContent = currentLoadState ? `${currentLoadState.state} W` : '0 W';
 
+    // Actualiza posición de interruptores
     this.querySelector('#ev-sw-solar').checked = solarModeState && solarModeState.state === 'on';
     this.querySelector('#ev-sw-grid').checked = gridModeState && gridModeState.state === 'on';
 
+    // Animación y estados visuales del icono principal
     const iconWrapper = this.querySelector('#ev-main-icon-wrapper');
     const subtitle = this.querySelector('#ev-status-subtitle');
-
     iconWrapper.className = 'ev-icon-wrapper';
 
     if (physicalPlugState.state === 'on') {
