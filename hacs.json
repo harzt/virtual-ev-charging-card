@@ -1,5 +1,12 @@
 {
   "name": "Virtual EV Charging Card",
   "filename": "virtual-ev-charging-card.js",
-  "render_readme": true
+  "render_readme": true,
+  "homeassistant": "2024.1.0",
+  "documentation": "https://github.com/harzt/virtual-ev-charging-card",
+  "issues": "https://github.com/harzt/virtual-ev-charging-card/issues",
+  "repository": "https://github.com/harzt/virtual-ev-charging-card",
+  "author": "harzt",
+  "iot_class": "local_push",
+  "version": "1.0.0"
 }
