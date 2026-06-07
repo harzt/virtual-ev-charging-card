@@ -1,5 +1,14 @@
 class VirtualEVChargingCard extends HTMLElement {
+  constructor() {
+    super();
+    // Usamos Shadow DOM para que tus estilos CSS no rompan el resto de Home Assistant
+    this.attachShadow({ mode: 'open' });
+  }
+
   setConfig(config) {
+    if (!config.solar_sensor || !config.grid_sensor || !config.enchufe_entity) {
+      throw new Error("Define 'solar_sensor', 'grid_sensor' y 'enchufe_entity' en la configuración de la tarjeta.");
+    }
     this.config = config;
   }
 
@@ -16,23 +25,26 @@ class VirtualEVChargingCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     
-    // Nombres exactos de las entidades generadas por la integración
+    // Nombres exactos de las entidades generadas por la integración (¡Sin el "de" fantasma!)
     const pctState = hass.states['number.virtual_ev_charging_station_porcentaje_actual'];
-    const powerState = hass.states['number.virtual_ev_charging_station_potencia_de_carga'];
+    const powerState = hass.states['number.virtual_ev_charging_station_potencia_carga'];
     const solarThresholdState = hass.states['number.virtual_ev_charging_station_umbral_potencia_solar'];
     const solarModeState = hass.states['switch.virtual_ev_charging_station_modo_automatico_solar'];
     const gridModeState = hass.states['switch.virtual_ev_charging_station_forzar_carga_red'];
     const kwhRemainingState = hass.states['sensor.virtual_ev_charging_station_energia_restante_80'];
     const timeRemainingState = hass.states['sensor.virtual_ev_charging_station_tiempo_restante'];
-    const currentSolarState = hass.states['sensor.total_solar_power'];
-    const currentLoadState = hass.states['sensor.moto_power'];
-    const physicalPlugState = hass.states['switch.moto'];
+    
+    // Entidades configurables por el usuario
+    const currentSolarState = hass.states[this.config.solar_sensor];
+    const currentLoadState = hass.states[this.config.grid_sensor];
+    const physicalPlugState = hass.states[this.config.enchufe_entity];
 
     // Evita renderizar si las entidades principales aún no existen en HA
     if (!pctState || !physicalPlugState) return;
 
     if (!this.content) {
-      this.innerHTML = `
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = `
         <ha-card>
           <div class="ev-card-container">
             <div class="ev-header">
@@ -59,7 +71,7 @@ class VirtualEVChargingCard extends HTMLElement {
                   <span>Potencia de Carga:</span>
                   <span class="ev-slider-numeric" id="ev-txt-power">1.4 kW</span>
                 </div>
-                <input type="range" min="0.1" max="11.0" step="0.1" id="ev-range-power" class="ev-slider">
+                <input type="range" min="0.1" max="22.0" step="0.1" id="ev-range-power" class="ev-slider">
               </div>
             </div>
 
@@ -88,7 +100,7 @@ class VirtualEVChargingCard extends HTMLElement {
             <div class="ev-controls">
               <div class="ev-control-row">
                 <div class="ev-control-label">
-                  <ha-icon icon="mdi:solar-power"></ha-icon>
+                  <ha-icon icon="mdi:solar-power-variant"></ha-icon>
                   <span>Carga Automática Solar</span>
                 </div>
                 <ha-switch id="ev-sw-solar"></ha-switch>
@@ -166,13 +178,15 @@ class VirtualEVChargingCard extends HTMLElement {
           100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
         }
       `;
-      this.appendChild(style);
-      this.content = this.querySelector('.ev-card-container');
+      
+      this.shadowRoot.appendChild(style);
+      this.shadowRoot.appendChild(wrapper);
+      this.content = this.shadowRoot.querySelector('.ev-card-container');
 
       // --- LISTENERS DE LOS DESLIZADORES INTERNOS ---
-      const rangePct = this.querySelector('#ev-range-pct');
+      const rangePct = this.content.querySelector('#ev-range-pct');
       rangePct.addEventListener('input', (e) => {
-        this.querySelector('#ev-txt-pct').textContent = e.target.value + '%';
+        this.content.querySelector('#ev-txt-pct').textContent = e.target.value + '%';
       });
       rangePct.addEventListener('change', (e) => {
         hass.callService('number', 'set_value', {
@@ -181,35 +195,36 @@ class VirtualEVChargingCard extends HTMLElement {
         });
       });
 
-      const rangePower = this.querySelector('#ev-range-power');
+      const rangePower = this.content.querySelector('#ev-range-power');
       rangePower.addEventListener('input', (e) => {
-        this.querySelector('#ev-txt-power').textContent = e.target.value + ' kW';
+        this.content.querySelector('#ev-txt-power').textContent = e.target.value + ' kW';
       });
       rangePower.addEventListener('change', (e) => {
+        // CORREGIDO: ¡Sin el "de"!
         hass.callService('number', 'set_value', {
-          entity_id: 'number.virtual_ev_charging_station_potencia_de_carga',
+          entity_id: 'number.virtual_ev_charging_station_potencia_carga',
           value: parseFloat(e.target.value)
         });
       });
 
       // --- LISTENERS DE LAS ZONAS CLICABLES ---
-      this.querySelector('#ev-click-kwh').addEventListener('click', () => {
+      this.content.querySelector('#ev-click-kwh').addEventListener('click', () => {
         this._openMoreInfo('sensor.virtual_ev_charging_station_energia_restante_80');
       });
-      this.querySelector('#ev-click-time').addEventListener('click', () => {
+      this.content.querySelector('#ev-click-time').addEventListener('click', () => {
         this._openMoreInfo('sensor.virtual_ev_charging_station_tiempo_restante');
       });
-      this.querySelector('#ev-click-solar').addEventListener('click', () => {
+      this.content.querySelector('#ev-click-solar').addEventListener('click', () => {
         this._openMoreInfo('number.virtual_ev_charging_station_umbral_potencia_solar');
       });
 
       // --- LISTENERS DE LOS INTERRUPTORES ---
-      this.querySelector('#ev-sw-solar').addEventListener('change', (e) => {
+      this.content.querySelector('#ev-sw-solar').addEventListener('change', (e) => {
         hass.callService('switch', e.target.checked ? 'turn_on' : 'turn_off', {
           entity_id: 'switch.virtual_ev_charging_station_modo_automatico_solar'
         });
       });
-      this.querySelector('#ev-sw-grid').addEventListener('change', (e) => {
+      this.content.querySelector('#ev-sw-grid').addEventListener('change', (e) => {
         hass.callService('switch', e.target.checked ? 'turn_on' : 'turn_off', {
           entity_id: 'switch.virtual_ev_charging_station_forzar_carga_red'
         });
@@ -219,29 +234,29 @@ class VirtualEVChargingCard extends HTMLElement {
     // --- ACTUALIZACIÓN DE DATOS EN TIEMPO REAL ---
 
     // Sincroniza los deslizadores solo si el usuario no los está tocando en ese momento
-    if (document.activeElement !== this.querySelector('#ev-range-pct') && pctState) {
-      this.querySelector('#ev-range-pct').value = pctState.state;
-      this.querySelector('#ev-txt-pct').textContent = pctState.state + '%';
+    if (this.shadowRoot.activeElement !== this.content.querySelector('#ev-range-pct') && pctState) {
+      this.content.querySelector('#ev-range-pct').value = pctState.state;
+      this.content.querySelector('#ev-txt-pct').textContent = pctState.state + '%';
     }
     
-    if (document.activeElement !== this.querySelector('#ev-range-power') && powerState) {
-      this.querySelector('#ev-range-power').value = powerState.state;
-      this.querySelector('#ev-txt-power').textContent = powerState.state + ' kW';
+    if (this.shadowRoot.activeElement !== this.content.querySelector('#ev-range-power') && powerState) {
+      this.content.querySelector('#ev-range-power').value = powerState.state;
+      this.content.querySelector('#ev-txt-power').textContent = powerState.state + ' kW';
     }
 
     // Actualiza textos dinámicos
-    this.querySelector('#ev-val-kwh').textContent = kwhRemainingState ? `${kwhRemainingState.state} kWh` : '0.0 kWh';
-    this.querySelector('#ev-val-time').textContent = timeRemainingState ? timeRemainingState.state : '0m';
-    this.querySelector('#ev-tel-solar').textContent = currentSolarState ? `${currentSolarState.state} W` : '0 W';
-    this.querySelector('#ev-tel-load').textContent = currentLoadState ? `${currentLoadState.state} W` : '0 W';
+    this.content.querySelector('#ev-val-kwh').textContent = kwhRemainingState ? `${kwhRemainingState.state} kWh` : '0.0 kWh';
+    this.content.querySelector('#ev-val-time').textContent = timeRemainingState ? timeRemainingState.state : '0m';
+    this.content.querySelector('#ev-tel-solar').textContent = currentSolarState ? `${currentSolarState.state} ${currentSolarState.attributes.unit_of_measurement || 'W'}` : '0 W';
+    this.content.querySelector('#ev-tel-load').textContent = currentLoadState ? `${currentLoadState.state} ${currentLoadState.attributes.unit_of_measurement || 'W'}` : '0 W';
 
     // Actualiza posición de interruptores
-    this.querySelector('#ev-sw-solar').checked = solarModeState && solarModeState.state === 'on';
-    this.querySelector('#ev-sw-grid').checked = gridModeState && gridModeState.state === 'on';
+    this.content.querySelector('#ev-sw-solar').checked = solarModeState && solarModeState.state === 'on';
+    this.content.querySelector('#ev-sw-grid').checked = gridModeState && gridModeState.state === 'on';
 
     // Animación y estados visuales del icono principal
-    const iconWrapper = this.querySelector('#ev-main-icon-wrapper');
-    const subtitle = this.querySelector('#ev-status-subtitle');
+    const iconWrapper = this.content.querySelector('#ev-main-icon-wrapper');
+    const subtitle = this.content.querySelector('#ev-status-subtitle');
     iconWrapper.className = 'ev-icon-wrapper';
 
     if (physicalPlugState.state === 'on') {
@@ -257,7 +272,7 @@ class VirtualEVChargingCard extends HTMLElement {
     } else {
       if (solarModeState && solarModeState.state === 'on') {
         iconWrapper.classList.add('ready');
-        subtitle.textContent = `Esperando suficiente producción solar (> ${solarThresholdState ? solarThresholdState.state : '3000'}W)`;
+        subtitle.textContent = `Esperando excedentes (> ${solarThresholdState ? solarThresholdState.state : '3000'}W)`;
         subtitle.style.color = 'var(--secondary-text-color)';
       } else {
         subtitle.textContent = 'Estación en espera (Desarmada)';
