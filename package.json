@@ -1,0 +1,19 @@
+{
+  "name": "Virtual EV Charging Card",
+  "version": "1.0.0",
+  "description": "Tarjeta para Home Assistant que muestra los datos de la integración virtual-ev-charging",
+  "author": "harzt",
+  "license": "MIT",
+  "main": "dist/virtual-ev-charging-card.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/harzt/virtual-ev-charging-card.git"
+  },
+  "keywords": [
+    "home-assistant",
+    "custom-card",
+    "ev-charging",
+    "solar-energy",
+    "smart-home"
+  ]
+}
