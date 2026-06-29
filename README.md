@@ -100,6 +100,139 @@ entities:
     name: Forzar Carga desde Red
 ```
 
+### Configuración Manual
+
+type: custom:stack-in-card
+mode: vertical
+cards:
+  # --- 1. CABECERA DINÁMICA MUSHROOM ---
+  - type: custom:mod-card
+    card_mod:
+      style: |
+        mushroom-template-card {
+          --mush-icon-size: 50px !important;
+          --mush-shape-size: 80px !important;
+        }
+    card:
+      type: custom:mushroom-template-card
+      primary: Virtual EV Station
+      secondary: >-
+        {% if is_state('switch.virtual_ev_charging_station_forzar_carga_red', 'on') %}
+          {% if is_state('switch.TU_ENCHUFE_FISICO', 'on') %}
+            Cargando por Red ({{ states('number.virtual_ev_charging_station_potencia_carga') }} kW)
+          {% else %}
+            Iniciando carga por Red...
+          {% endif %}
+        {% elif is_state('switch.virtual_ev_charging_station_modo_automatico_solar', 'on') %}
+          {% if is_state('switch.TU_ENCHUFE_FISICO', 'on') %}
+            Aprovechando Producción Solar
+          {% else %}
+            Esperando Producción Solar (> {{ states('number.virtual_ev_charging_station_umbral_potencia_solar') }}W)
+          {% endif %}
+        {% elif is_state('switch.virtual_ev_charging_station_modo_programado', 'on') %}
+          Inicio programado a las {{ states('time.virtual_ev_charging_station_hora_inicio')[:5] }}
+        {% else %}
+          Estación en espera (Desarmada)
+        {% endif %}
+      icon: mdi:ev-station
+      icon_color: >-
+        {% if is_state('switch.virtual_ev_charging_station_forzar_carga_red', 'on') %}
+          blue
+        {% elif is_state('switch.virtual_ev_charging_station_modo_automatico_solar', 'on') %}
+          {% if is_state('switch.TU_ENCHUFE_FISICO', 'on') %} green {% else %} light-blue {% endif %}
+        {% elif is_state('switch.virtual_ev_charging_station_modo_programado', 'on') %}
+          purple
+        {% else %}
+          grey
+        {% endif %}
+      multiline_secondary: true
+   # --- 2. BARRAS DESLIZANTES ---
+  - type: custom:mushroom-number-card
+    entity: number.virtual_ev_charging_station_porcentaje_actual
+    name: Estado de la Batería
+    icon: mdi:battery-50
+    icon_color: light-blue
+    display_mode: slider
+  - type: custom:mushroom-number-card
+    entity: number.virtual_ev_charging_station_potencia_carga
+    name: Potencia de Carga
+    icon: mdi:ev-plug-type2
+    icon_color: light-blue
+    display_mode: slider
+   # --- 3. ESTADÍSTICAS Y TELEMETRÍA (Cuadrícula) ---
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Restante al 80%
+        secondary: '{{ states(''sensor.virtual_ev_charging_station_energia_restante_80'') }} kWh'
+        icon: mdi:battery-charging-80
+        icon_color: green
+        layout: vertical
+      - type: custom:mushroom-template-card
+        primary: Tiempo Restante
+        secondary: '{{ states(''sensor.virtual_ev_charging_station_tiempo_restante'') }}'
+        icon: mdi:timer-sand
+        icon_color: blue
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: sensor.TU_SENSOR_SOLAR
+        name: Producción Solar
+        icon: mdi:white-balance-sunny
+        icon_color: amber
+        primary_info: state
+        secondary_info: name
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: sensor.TU_SENSOR_POTENCIA_ENCHUFE
+        name: Consumo
+        icon: mdi:flash
+        icon_color: light-blue
+        primary_info: state
+        secondary_info: name
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: switch.virtual_ev_charging_station_modo_automatico_solar
+        name: Carga Automática Solar
+        icon: mdi:solar-power-variant
+        icon_color: amber
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-entity-card
+        entity: switch.virtual_ev_charging_station_forzar_carga_red
+        name: Forzar Carga desde Red
+        icon: mdi:transmission-tower
+        icon_color: red
+        tap_action:
+          action: toggle
+
+  # --- 5. CONTROL HORARIO PROGRAMADO (Diseño Premium) ---
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: custom:mushroom-template-card
+        entity: time.virtual_ev_charging_station_hora_inicio
+        primary: Hora de Inicio
+        secondary: "{{ states('time.virtual_ev_charging_station_hora_inicio')[:5] }}"
+        icon: mdi:clock-edit-outline
+        icon_color: >-
+          {% if is_state('switch.virtual_ev_charging_station_modo_programado', 'on') %}
+            purple
+          {% else %}
+            grey
+          {% endif %}
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-entity-card
+        entity: switch.virtual_ev_charging_station_modo_programado
+        name: Programación
+        icon: mdi:clock-check
+        icon_color: purple
+        tap_action:
+          action: toggle   
+
 ### Notas Importantes
 
 ⚠️ **Personalización Requerida:**
