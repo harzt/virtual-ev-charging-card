@@ -232,7 +232,7 @@ cards:
         icon_color: purple
         tap_action:
           action: toggle   
-
+```
 ### Notas Importantes
 
 ⚠️ **Personalización Requerida:**
