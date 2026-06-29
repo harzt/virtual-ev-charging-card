@@ -101,6 +101,7 @@ entities:
 ```
 
 ### Configuración Manual
+
 ```yaml
 type: custom:stack-in-card
 mode: vertical
@@ -233,6 +234,7 @@ cards:
         tap_action:
           action: toggle   
 ```
+
 ### Notas Importantes
 
 ⚠️ **Personalización Requerida:**
