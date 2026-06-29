@@ -101,7 +101,7 @@ entities:
 ```
 
 ### Configuración Manual
-
+```yaml
 type: custom:stack-in-card
 mode: vertical
 cards:
