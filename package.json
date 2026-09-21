@@ -1,6 +1,6 @@
 {
   "name": "Virtual EV Charging Card",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Tarjeta para Home Assistant que muestra los datos de la integración virtual-ev-charging",
   "author": "harzt",
   "license": "MIT",

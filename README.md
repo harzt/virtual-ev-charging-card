@@ -46,11 +46,19 @@ resources:
 
 ## 🎨 Uso
 
+La tarjeta es 100% nativa: no necesita Mushroom Cards, card-mod ni stack-in-card,
+pero reproduce el mismo diseño (cabecera dinámica, deslizadores, cuadrícula de
+telemetría y bloque de programación). Solo tienes que indicar tus entidades
+físicas; las de la integración `virtual_ev_charging_station` ya tienen el
+nombre por defecto.
+
 Añade esta tarjeta a tu dashboard:
 
 ```yaml
 type: custom:virtual-ev-charging-card
-title: Virtual EV Station
+plug_entity: switch.TU_ENCHUFE_FISICO
+solar_entity: sensor.TU_SENSOR_SOLAR
+load_entity: sensor.TU_SENSOR_POTENCIA_ENCHUFE
 ```
 
 ### Configuración Completa
@@ -59,48 +67,32 @@ title: Virtual EV Station
 type: custom:virtual-ev-charging-card
 title: Virtual EV Station
 icon: mdi:ev-station
-state_color: true
-entities:
-  # Control del enchufe físico
-  - entity: switch.TU_ENCHUFE_FISICO
-    name: Interruptor Cargador
-    icon: mdi:power-socket-eu
 
-  # Deslizadores de configuración
-  - entity: number.virtual_ev_charging_station_porcentaje_actual
-    name: Estado de la Batería
-  
-  - entity: number.virtual_ev_charging_station_potencia_carga
-    name: Potencia de Carga
-  
-  - entity: number.virtual_ev_charging_station_umbral_potencia_solar
-    name: Umbral Solar
+# --- Entidades físicas (dependen de tu instalación) ---
+plug_entity: switch.TU_ENCHUFE_FISICO
+solar_entity: sensor.TU_SENSOR_SOLAR
+load_entity: sensor.TU_SENSOR_POTENCIA_ENCHUFE
 
-  # Sensores matemáticos
-  - entity: sensor.virtual_ev_charging_station_energia_restante_80
-    name: Restante al 80%
-  
-  - entity: sensor.virtual_ev_charging_station_tiempo_restante
-    name: Tiempo Restante
+# --- Entidades generadas por la integración (opcional, ya traen estos valores por defecto) ---
+battery_entity: number.virtual_ev_charging_station_porcentaje_actual
+power_entity: number.virtual_ev_charging_station_potencia_carga
+solar_threshold_entity: number.virtual_ev_charging_station_umbral_potencia_solar
+kwh_remaining_entity: sensor.virtual_ev_charging_station_energia_restante_80
+time_remaining_entity: sensor.virtual_ev_charging_station_tiempo_restante
+solar_mode_entity: switch.virtual_ev_charging_station_modo_automatico_solar
+grid_mode_entity: switch.virtual_ev_charging_station_forzar_carga_red
+scheduled_mode_entity: switch.virtual_ev_charging_station_modo_programado
+start_time_entity: time.virtual_ev_charging_station_hora_inicio
+duration_entity: number.virtual_ev_charging_station_duracion_programada
 
-  # Sensores físicos
-  - entity: sensor.TU_SENSOR_SOLAR
-    name: Producción Solar
-    icon: mdi:white-balance-sunny
-  
-  - entity: sensor.TU_SENSOR_POTENCIA_ENCHUFE
-    name: Consumo Moto
-    icon: mdi:flash
-
-  # Controles de la integración
-  - entity: switch.virtual_ev_charging_station_modo_automatico_solar
-    name: Carga Automática Solar
-  
-  - entity: switch.virtual_ev_charging_station_forzar_carga_red
-    name: Forzar Carga desde Red
+# Pon esto a false si no usas el modo de carga programada
+show_scheduled: true
 ```
 
-### Configuración Manual
+### Alternativa: Configuración Manual (Mushroom Cards)
+
+Si prefieres seguir usando Mushroom Cards + card-mod en lugar de la tarjeta
+nativa, puedes montar el mismo panel a mano con este `stack-in-card`:
 
 ```yaml
 type: custom:stack-in-card
@@ -237,7 +229,12 @@ cards:
 
 ### Notas Importantes
 
-⚠️ **Personalización Requerida:**
+⚠️ **Personalización Requerida (tarjeta nativa):**
+- `plug_entity` (**obligatorio**): tu switch de enchufe/cargador real
+- `solar_entity`: tu sensor de producción solar (opcional, se muestra `--` si no se indica)
+- `load_entity`: tu sensor de consumo del enchufe/vehículo (opcional)
+
+⚠️ **Personalización Requerida (Mushroom manual):**
 - Reemplaza `TU_ENCHUFE_FISICO` con tu entidad de enchufe real
 - Reemplaza `TU_SENSOR_SOLAR` con tu sensor de producción solar
 - Reemplaza `TU_SENSOR_POTENCIA_ENCHUFE` con tu sensor de consumo del enchufe
@@ -251,10 +248,13 @@ cards:
 | **Number** | `number.virtual_ev_charging_station_porcentaje_actual` | Estado actual de batería (0-100%) |
 | **Number** | `number.virtual_ev_charging_station_potencia_carga` | Potencia de carga (0.1-22 kW) |
 | **Number** | `number.virtual_ev_charging_station_umbral_potencia_solar` | Umbral mínimo solar (0-10000 W) |
+| **Number** | `number.virtual_ev_charging_station_duracion_programada` | Duración de la carga programada |
 | **Sensor** | `sensor.virtual_ev_charging_station_energia_restante_80` | kWh faltantes al 80% |
 | **Sensor** | `sensor.virtual_ev_charging_station_tiempo_restante` | Tiempo estimado de carga |
 | **Switch** | `switch.virtual_ev_charging_station_modo_automatico_solar` | Activar carga solar automática |
 | **Switch** | `switch.virtual_ev_charging_station_forzar_carga_red` | Forzar carga desde la red al 100% |
+| **Switch** | `switch.virtual_ev_charging_station_modo_programado` | Activar carga programada por horario |
+| **Time** | `time.virtual_ev_charging_station_hora_inicio` | Hora de inicio de la carga programada |
 
 ---
 
@@ -284,4 +284,4 @@ MIT License - Libre para usar y modificar
 
 ---
 
-**Última actualización**: Junio 2026 | **Versión**: 1.0.0
+**Última actualización**: Septiembre 2026 | **Versión**: 2.0.0
